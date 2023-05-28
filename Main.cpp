@@ -1,5 +1,8 @@
 #include <GLUT/glut.h>
 #include <vector>
+#include <iostream>
+
+using namespace std;
 
 // Window dimensions
 const int windowWidth = 1280;
@@ -12,18 +15,26 @@ struct Square
     int y;
 };
 
+struct Button
+{
+    int x;
+    int y;
+};
+
 std::vector<Square> squares;  // Store the clicked squares
 
 const int squareSize = 5;
 const int toolbarWidth = 100;
 
 // Toolbar button dimensions and positions
+const int buttonGaps = 20;
 const int buttonWidth = 80;
 const int buttonHeight = 30;
-const int addButtonX = 10;
-const int addButtonY = 50;
-const int removeButtonX = 10;
-const int removeButtonY = 100;
+
+struct Button buttonAdd = {10, 50};
+struct Button buttonRemove = {buttonAdd.x, buttonAdd.y + buttonHeight + buttonGaps};
+struct Button buttonClear = {buttonRemove.x, buttonRemove.y + buttonHeight + buttonGaps};
+
 
 // Number of line segments for B-spline curves
 const int numSegments = 100;
@@ -57,6 +68,25 @@ void drawBSplineSegment(const Square& p0, const Square& p1, const Square& p2, co
     glEnd();
 }
 
+void drawButton(int x, int y, string label)
+{
+    glColor3f(0.5, 0.5, 0.5);
+    glBegin(GL_QUADS);
+    glVertex2i(x, y);
+    glVertex2i(x + buttonWidth, y);
+    glVertex2i(x + buttonWidth, y + buttonHeight);
+    glVertex2i(x, y + buttonHeight);
+    glEnd();
+
+
+    glColor3f(0.0, 0.0, 0.0);
+    glRasterPos2i(x + 10, y + 10);
+    for (int i = 0; i < label.size(); i++)
+    {
+        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, label[i]);
+    }
+}
+
 void drawToolbar()
 {
     // Draw the toolbar background
@@ -68,43 +98,9 @@ void drawToolbar()
     glVertex2i(0, windowHeight);
     glEnd();
 
-    // Draw the "Add Point" button
-    glColor3f(0.5, 0.5, 0.5);
-    glBegin(GL_QUADS);
-    glVertex2i(addButtonX, addButtonY);
-    glVertex2i(addButtonX + buttonWidth, addButtonY);
-    glVertex2i(addButtonX + buttonWidth, addButtonY + buttonHeight);
-    glVertex2i(addButtonX, addButtonY + buttonHeight);
-    glEnd();
-
-    // Draw the "Remove Point" button
-    glColor3f(0.5, 0.5, 0.5);
-    glBegin(GL_QUADS);
-    glVertex2i(removeButtonX, removeButtonY);
-    glVertex2i(removeButtonX + buttonWidth, removeButtonY);
-    glVertex2i(removeButtonX + buttonWidth, removeButtonY + buttonHeight);
-    glVertex2i(removeButtonX, removeButtonY + buttonHeight);
-    glEnd();
-
-    // Draw the button labels
-    glColor3f(0.0, 0.0, 0.0);
-    glRasterPos2i(addButtonX + 10, addButtonY + 20);
-    glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, 'A');
-    glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, 'd');
-    glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, 'd');
-    glRasterPos2i(removeButtonX + 10, removeButtonY + 20);
-    glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, 'R');
-    glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, 'e');
-    glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, 'm');
-    glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, 'o');
-    glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, 'v');
-    glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, 'e');
-    glRasterPos2i(removeButtonX + 10, removeButtonY + 40);
-    glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, 'P');
-    glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, 'o');
-    glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, 'i');
-    glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, 'n');
-    glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, 't');
+    drawButton(buttonAdd.x, buttonAdd.y, "Add");
+    drawButton(buttonRemove.x, buttonRemove.y, "Remove");
+    drawButton(buttonClear.x, buttonClear.y, "Clear");
 }
 
 void display()
@@ -170,11 +166,27 @@ void mouse(int button, int state, int x, int y)
     if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
     {   
         // Add the clicked coordinates to the vector
+        int true_y = windowHeight - y;
         squares.push_back(Square());
-        if (x > toolbarWidth)
+        if (x >= toolbarWidth)
         {
             squares.back().x = x;
-            squares.back().y = windowHeight - y;
+            squares.back().y = true_y;
+        }
+        else if (x <= buttonAdd.x + buttonWidth && x >= buttonAdd.x)
+        {
+            if (true_y <= buttonAdd.y + buttonHeight && true_y >= buttonAdd.y)
+            {
+                cout << "add ";
+            }
+            else if (true_y <= buttonRemove.y + buttonHeight && true_y >= buttonRemove.y)
+            {
+                cout << "remove ";
+            }
+            else if (true_y <= buttonClear.y + buttonHeight && true_y >= buttonClear.y)
+            {
+                cout << "clear ";
+            }
         }
         
         glutPostRedisplay();  // Trigger a redraw
