@@ -8,6 +8,16 @@ using namespace std;
 const int windowWidth = 1280;
 const int windowHeight = 700;
 
+struct Button
+{
+    int x;
+    int y;
+};
+
+float r[] = {1, 0, 0, 1, 0, 1};
+float g[] = {0, 1, 0, 1, 1, 0};
+float b[] = {0, 0, 1, 0, 1, 1};
+
 // Square position and size
 struct Square
 {
@@ -15,36 +25,38 @@ struct Square
     int y;
 };
 
-struct Button
-{
-    int x;
-    int y;
-};
-
 std::vector<Square> squares;  // Store the clicked squares
+
+int pointColor = 0;
+int splineColor = 0;
+int backgroundColor = 0;
 
 const int squareSize = 5;
 const int toolbarWidth = 100;
 
-// Toolbar button dimensions and positions
+// Toolbar button dimensions
 const int buttonGaps = 20;
 const int buttonWidth = 80;
 const int buttonHeight = 30;
 
-struct Button buttonAdd = {10, 50};
-struct Button buttonRemove = {buttonAdd.x, buttonAdd.y + buttonHeight + buttonGaps};
+// Defining toolbar buttons with locations
+struct Button buttonQuit = {10, 50};
+struct Button buttonRemove = {buttonQuit.x, buttonQuit.y + buttonHeight + buttonGaps};
 struct Button buttonClear = {buttonRemove.x, buttonRemove.y + buttonHeight + buttonGaps};
+struct Button buttonChangeSplineColor = {buttonClear.x, buttonClear.y + buttonHeight + buttonGaps};
+struct Button buttonChangePointColor = {buttonChangeSplineColor.x, buttonChangeSplineColor.y + buttonHeight + buttonGaps};
+struct Button buttonChangeBackgroundColor = {buttonChangePointColor.x, buttonChangePointColor.y + buttonHeight + buttonGaps};
 
 
 // Number of line segments for B-spline curves
 const int numSegments = 100;
 
 // Function to draw a B-spline segment given 4 control points
-void drawBSplineSegment(const Square& p0, const Square& p1, const Square& p2, const Square& p3)
+/*void drawBSplineSegment(const Square& p0, const Square& p1, const Square& p2, const Square& p3)
 {
     const int segments = 100;  // Number of line segments to approximate the curve
 
-    glColor3f(0.0, 1.0, 0.0);  // Set color to green for the B-spline curve
+    glColor3f(r[splineColor], g[splineColor], b[splineColor]);  // Set color to green for the B-spline curve
 
     glBegin(GL_LINE_STRIP);
 
@@ -66,7 +78,7 @@ void drawBSplineSegment(const Square& p0, const Square& p1, const Square& p2, co
     }
 
     glEnd();
-}
+}*/
 
 void drawButton(int x, int y, string label)
 {
@@ -98,17 +110,23 @@ void drawToolbar()
     glVertex2i(0, windowHeight);
     glEnd();
 
-    drawButton(buttonAdd.x, buttonAdd.y, "Add");
-    drawButton(buttonRemove.x, buttonRemove.y, "Remove");
+    drawButton(buttonQuit.x, buttonQuit.y, "Quit");
+    drawButton(buttonRemove.x, buttonRemove.y, "Undo");
     drawButton(buttonClear.x, buttonClear.y, "Clear");
+    drawButton(buttonChangeSplineColor.x, buttonChangeSplineColor.y, "Spline Color");
+    drawButton(buttonChangePointColor.x, buttonChangePointColor.y, "Point Color");
+    drawButton(buttonChangeBackgroundColor.x, buttonChangeBackgroundColor.y, "Background");
 }
 
 void display()
 {
     glClear(GL_COLOR_BUFFER_BIT);
 
+    // Draw the toolbar
+    drawToolbar();
+
     // Draw all the squares
-    glColor3f(1.0, 0.0, 0.0);  // Set color to red
+    glColor3f(r[pointColor], g[pointColor], b[pointColor]);  // Set point color
     for (const Square& square : squares)
     {
         glBegin(GL_QUADS);
@@ -120,7 +138,7 @@ void display()
     }
 
     // Draw B-spline curves
-    glColor3f(0.0, 0.0, 1.0);  // Set color to blue
+    glColor3f(r[splineColor], g[splineColor], b[splineColor]);  // Set spline color
     if (squares.size() >= 4)
     {
         glBegin(GL_LINE_STRIP);
@@ -155,9 +173,6 @@ void display()
         glEnd();
     }
 
-    // Draw the toolbar
-    drawToolbar();
-
     glFlush();
 }
 
@@ -167,25 +182,38 @@ void mouse(int button, int state, int x, int y)
     {   
         // Add the clicked coordinates to the vector
         int true_y = windowHeight - y;
-        squares.push_back(Square());
-        if (x >= toolbarWidth)
+        
+        if (x >= toolbarWidth)  // Check if the mouse is clicked on the painting area
         {
+            squares.push_back(Square());
             squares.back().x = x;
             squares.back().y = true_y;
         }
-        else if (x <= buttonAdd.x + buttonWidth && x >= buttonAdd.x)
+        else if (x <= buttonQuit.x + buttonWidth && x >= buttonQuit.x)  // Check if a button has been clicked
         {
-            if (true_y <= buttonAdd.y + buttonHeight && true_y >= buttonAdd.y)
+            if (true_y <= buttonQuit.y + buttonHeight && true_y >= buttonQuit.y)
             {
-                cout << "add ";
+                exit(0);
             }
             else if (true_y <= buttonRemove.y + buttonHeight && true_y >= buttonRemove.y)
             {
-                cout << "remove ";
+                squares.pop_back();
             }
             else if (true_y <= buttonClear.y + buttonHeight && true_y >= buttonClear.y)
             {
-                cout << "clear ";
+                squares.clear();
+            }
+            else if (true_y <= buttonChangeSplineColor.y + buttonHeight && true_y >= buttonChangeSplineColor.y)
+            {
+                splineColor++;
+            }
+            else if (true_y <= buttonChangePointColor.y + buttonHeight && true_y >= buttonChangePointColor.y)
+            {
+                pointColor++;
+            }
+            else if (true_y <= buttonChangeBackgroundColor.y + buttonHeight && true_y >= buttonChangeBackgroundColor.y)
+            {
+                backgroundColor++;
             }
         }
         
@@ -207,7 +235,7 @@ int main(int argc, char** argv)
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_RGB | GLUT_SINGLE);
     glutInitWindowSize(windowWidth, windowHeight);
-    glutCreateWindow("Click to Draw Red Squares and B-splines");
+    glutCreateWindow("B-Spline oluşturma aracı");
 
     glutDisplayFunc(display);
     glutMouseFunc(mouse);
